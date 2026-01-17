@@ -1,0 +1,85 @@
+// src/utils/query.ts
+
+import type {ModelRelations} from "@/types/ModelRelations.ts";
+
+export class Query<T> {
+    private readonly baseUrl: string;
+    private readonly resource: string;
+    protected relations: Record<string, ModelRelations> = {}
+
+    /**
+     * @param resource nom de la ressource, ex: "users" ou "agendas"
+     * @param relations
+     * @param baseUrl base de l'API (optionnel)
+     */
+    constructor(resource: string, relations: Record<string, ModelRelations> = {}, baseUrl: string = "http://localhost:5001/api") {
+        this.resource = resource.replace(/^\/+|\/+$/g, ""); // strip slashes
+        this.relations = relations;
+        this.baseUrl = baseUrl.replace(/\/+$/, ""); // strip trailing slash
+    }
+
+    /**
+     * Fetch d'un item par id (ou param optionnel).
+     * Retourne null si status === 204 (No Content) ou si body === null.
+     */
+    public async get(id = ""): Promise<T | null> {
+        const url = this.buildUrl(id);
+        const response = await fetch(url, {method: "GET", credentials: "include"});
+
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status} when GET ${url}`);
+        }
+
+        // 204 No Content -> null
+        if (response.status === 204) return null;
+
+        // parse JSON safely
+        const parsed = (await this.safeJsonParse(response));
+        return parsed as T | null;
+    }
+
+    /**
+     * Récupère la liste complète de la ressource.
+     */
+    public async getAll(): Promise<T[]> {
+        const url = this.buildUrl();
+        const response = await fetch(url, {method: "GET", credentials: "include"});
+
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status} when GET ${url}`);
+        }
+
+        if (response.status === 204) return [];
+
+        const parsed = (await this.safeJsonParse(response));
+        return Array.isArray(parsed) ? (parsed as T[]) : ([] as T[]);
+    }
+
+    /**
+     * Construit l'URL complète en échappant l'id/param si fourni.
+     */
+    private buildUrl(param?: string): string {
+        if (!param) return `${this.baseUrl}/${this.resource}`;
+        // si param contient '/' il peut être un sous chemin — laisser l'utilisateur s'en charger, mais encoder les segments,
+        // on encode tout param pour éviter problèmes
+        const encoded = encodeURIComponent(param);
+        const urlSuffix = Object.values(this.relations).map(item => item.url);
+        return `${this.baseUrl}/${this.resource}/${encoded}${urlSuffix}`;
+    }
+
+    /**
+     * Lit la réponse et renvoie le JSON ou null si body vide.
+     * Utilise unknown pour rester typé.
+     */
+    private async safeJsonParse(response: Response): Promise<unknown> {
+        const text = await response.text();
+
+        if (!text) return null;
+
+        try {
+            return JSON.parse(text);
+        } catch (err) {
+            throw new Error(`Invalid JSON response from ${response.url}: ${(err as Error).message}`);
+        }
+    }
+}
