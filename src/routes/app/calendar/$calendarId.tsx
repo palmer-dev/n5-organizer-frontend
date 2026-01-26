@@ -7,7 +7,6 @@ import {agendaQueryOptions} from "@/features/agendas/agenda-query-options.ts";
 const startOfToday = new Date();
 startOfToday.setHours(0, 0, 0, 0);
 
-
 const Page = () => {
     const {calendarId} = Route.useParams()
 

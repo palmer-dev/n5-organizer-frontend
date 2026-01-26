@@ -7,26 +7,39 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import {Link} from "@tanstack/react-router";
+import {type ToOptions, useNavigate} from "@tanstack/react-router";
+import {useCallback} from "react";
+
+export type MenuItem = {
+    title: string,
+    url: ToOptions['to'],
+    icon: Icon,
+}
 
 export function NavMain({
                             items,
                         }: {
     items: {
         title: string
-        url: string
+        url: ToOptions['to']
         icon?: Icon
     }[]
 }) {
+    const navigate = useNavigate();
+
+    const handleNavigation = useCallback((url: ToOptions['to']) => {
+        return () => navigate({to: url});
+    }, [navigate]);
+
     return (
         <SidebarGroup>
             <SidebarGroupContent className="flex flex-col gap-2">
                 <SidebarMenu>
                     {items.map((item) => (
                         <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton tooltip={item.title}>
+                            <SidebarMenuButton className={"cursor-pointer"} tooltip={item.title} onClick={handleNavigation(item.url)}>
                                 {item.icon && <item.icon/>}
-                                <Link to={item.url}>{item.title}</Link>
+                                {item.title}
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     ))}

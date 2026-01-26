@@ -56,6 +56,54 @@ export class Query<T> {
     }
 
     /**
+     * Search request (POST)
+     */
+    public async search<TBody extends object>(bodyData: TBody): Promise<T[] | null> {
+        const url = this.buildUrl('search');
+
+        let response: Response;
+
+        try {
+            response = await fetch(url, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify(bodyData),
+            });
+        } catch (error) {
+            // Erreur réseau (timeout, DNS, CORS, etc.)
+            throw new Error(`Network error while calling POST ${url}: ${String(error)}`);
+        }
+
+        if (!response.ok) {
+            let errorBody: unknown = null;
+
+            try {
+                errorBody = await this.safeJsonParse(response);
+            } catch {
+                // ignore JSON parse error
+            }
+
+            throw new Error(
+                `HTTP error ${response.status} when POST ${url}` +
+                (errorBody ? ` - ${JSON.stringify(errorBody)}` : "")
+            );
+        }
+
+        // 204 No Content
+        if (response.status === 204) {
+            return null;
+        }
+
+        const parsed = await this.safeJsonParse(response);
+
+        return Array.isArray(parsed) ? (parsed as T[]) : ([] as T[]);
+    }
+
+    /**
      * Construit l'URL complète en échappant l'id/param si fourni.
      */
     private buildUrl(param?: string): string {

@@ -13,24 +13,25 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import type {DateRange} from "react-day-picker";
 
 interface DatePickerProps {
-    value?: Date;
-    onChange?: (date: Date | undefined) => void;
+    value?: DateRange;
+    onChange?: (date: DateRange | undefined) => void;
     id?: string;
     placeholder?: string;
     disabled?: boolean;
     disabledDates?: Date[];
 }
 
-const DatePicker = ({
-                        value,
-                        onChange,
-                        id,
-                        placeholder,
-                        disabled,
-                        disabledDates = []
-                    }: DatePickerProps) => {
+const RangePicker = ({
+                         value,
+                         onChange,
+                         id,
+                         placeholder,
+                         disabled,
+                         disabledDates = []
+                     }: DatePickerProps) => {
     const [open, setOpen] = React.useState(false);
     const [timeZone, setTimeZone] = React.useState<string | undefined>(undefined)
 
@@ -47,7 +48,7 @@ const DatePicker = ({
                     className="w-full justify-between font-normal"
                     disabled={disabled}
                 >
-                    {value ? value.toLocaleDateString() : placeholder || "Select date"}
+                    {(value?.from && value?.to) ? (value.from?.toLocaleDateString() + " au " + value.to?.toLocaleDateString()) : placeholder || "Select date"}
                     <CalendarIcon className="size-3.5"/>
                 </Button>
             </PopoverTrigger>
@@ -59,7 +60,7 @@ const DatePicker = ({
                         return (date < d || disabledDates.map(date => date.getTime()).includes(date.getTime()))
                     }
                     }
-                    mode="single"
+                    mode="range"
                     selected={value}
                     locale={fr}
                     weekStartsOn={1}
@@ -71,7 +72,6 @@ const DatePicker = ({
                     timeZone={timeZone}
                     onSelect={(date) => {
                         onChange?.(date);
-                        setOpen(false);
                     }}
                 />
             </PopoverContent>
@@ -79,4 +79,4 @@ const DatePicker = ({
     );
 };
 
-export {DatePicker};
+export {RangePicker};

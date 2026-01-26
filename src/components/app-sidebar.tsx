@@ -5,7 +5,7 @@ import {
     IconListDetails,
 } from "@tabler/icons-react"
 
-import {NavMain} from "@/components/nav-main"
+import {type MenuItem, NavMain} from "@/components/nav-main"
 import {NavUser} from "@/components/nav-user"
 import {
     Sidebar,
@@ -18,7 +18,16 @@ import {
 } from "@/components/ui/sidebar"
 import {authClient} from "@/lib/auth-client.ts";
 
-const data = {
+type DataType = {
+    user: {
+        name: string,
+        email: string,
+        avatar: string,
+    },
+    navMain: MenuItem[]
+}
+
+const data: DataType = {
     user: {
         name: "shadcn",
         email: "m@example.com",

@@ -30,7 +30,7 @@ const formSchema = z.object({
         }
     );
 
-type EventFormProps = {
+export  type EventFormProps = {
     startDate: Date;
     endDate: Date;
     onSubmit: (data: z.infer<typeof formSchema>) => void;
@@ -47,6 +47,7 @@ export function EventForm({startDate, endDate, onSubmit, onCancel}: EventFormPro
             startDate: startDate,
             endDate: endDate,
         },
+        mode: "onChange"
     });
 
     const usersList = useMemo(() => {
@@ -82,7 +83,7 @@ export function EventForm({startDate, endDate, onSubmit, onCancel}: EventFormPro
                             <FormLabel>À partir de</FormLabel>
                             <FormDescription>Date à partir de laquelle la réunion peut être proposée.</FormDescription>
                             <FormControl>
-                                <DatePicker onChange={field.onChange} value={field.value} />
+                                <DatePicker onChange={field.onChange} value={field.value}/>
                             </FormControl>
                             <FormMessage/>
                         </FormItem>
@@ -96,7 +97,7 @@ export function EventForm({startDate, endDate, onSubmit, onCancel}: EventFormPro
                             <FormLabel>Jusqu'au</FormLabel>
                             <FormDescription>Date jusqu'à laquelle la réunion peut être proposée.</FormDescription>
                             <FormControl>
-                                <DatePicker onChange={field.onChange} value={field.value} disabledDates={[new Date(2025, 11, 22)]}/>
+                                <DatePicker onChange={field.onChange} value={field.value}/>
                             </FormControl>
                             <FormMessage/>
                         </FormItem>

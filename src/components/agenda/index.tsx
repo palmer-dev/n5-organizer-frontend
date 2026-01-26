@@ -1,79 +1,39 @@
 "use client";
 
-import {EventForm} from "@/components/shadcn-big-calendar/event-form";
-import ShadcnBigCalendar from "@/components/shadcn-big-calendar/shadcn-big-calendar";
 import {Button} from "@/components/ui/button";
-import {Dialog, DialogContent, DialogTitle} from "@/components/ui/dialog";
+import {Dialog} from "@/components/ui/dialog";
 import {Plus} from "lucide-react";
 import moment from 'moment/min/moment-with-locales';
-import {type ComponentType, type SetStateAction, type SyntheticEvent, useState} from "react";
-import {type CalendarProps} from "react-big-calendar";
-import {momentLocalizer, type SlotInfo, Views} from "react-big-calendar";
+import {type SyntheticEvent, useState} from "react";
+import {type SlotInfo} from "react-big-calendar";
 import type {EventInteractionArgs} from "react-big-calendar/lib/addons/dragAndDrop";
-import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import type {CalendarEvent} from "@/types/CalendarEvent.ts";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {agendaAppointmentsQueryOptions} from "@/features/agendas/agenda-appointments-query-options.ts";
+import {MultiForm} from "@/components/multistep-form/form.tsx";
+import type {DateRange} from "react-day-picker";
+import {Calendar} from "@/components/agenda/calendar.tsx";
 
-const DnDCalendar = withDragAndDrop<CalendarEvent>(
-    ShadcnBigCalendar as ComponentType<CalendarProps<CalendarEvent>>
-);
 
-const messages = {
-    allDay: "Tous les jours",
-    previous: "Précédent",
-    next: "Suivant",
-    today: "Aujourd'hui",
-    month: "Mois",
-    week: "Semaine",
-    day: "Jour",
-    agenda: "Agenda",
-    date: "Date",
-    time: "Heure",
-    event: "Evenement",
-};
+moment.locale('fr');
 
 const AgendaViewer = ({calendarId}: { calendarId: string }) => {
     const {data: appointments, isLoading, isError} = useSuspenseQuery(agendaAppointmentsQueryOptions(calendarId))
 
-    const [view, setView] = useState<typeof Views[keyof typeof Views]>(Views.WEEK);
     const [date, setDate] = useState(new Date());
     const [events, setEvents] = useState<CalendarEvent[]>((appointments ?? [])?.map(app => app.toCalendarEvent()));
     const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
 
-    moment.locale('fr');
-
-    const localizer = momentLocalizer(moment);
-
-    const eventPropGetter: CalendarProps<CalendarEvent>["eventPropGetter"] = (event) => {
-        const variant = event.variant ?? "primary";
-        return {
-            className: `event-variant-${variant}`,
-        };
-    };
-
-    const handleNavigate = (newDate: Date) => {
-        setDate(newDate);
-    };
-
-    const handleViewChange = (newView: SetStateAction<typeof Views[keyof typeof Views]>) => {
-        setView(newView);
-    };
-
-    const handleSelectSlot = (slotInfo: SlotInfo) => {
-        setSelectedSlot(slotInfo);
-    };
-
-    const handleCreateEvent = (data: {
+    const handleCreateEvent = async (data: {
         title: string;
-        startDate: Date;
-        endDate: Date;
-        users: string[]
+        range: DateRange;
+        users: string[],
+        timeslot: string,
     }) => {
         const newEvent: CalendarEvent = {
             title: data.title,
-            startDate: data.startDate,
-            endDate: data.endDate,
+            startDate: data.range.from!,
+            endDate: data.range.to!,
             variant: "primary",
         };
 
@@ -138,43 +98,19 @@ const AgendaViewer = ({calendarId}: { calendarId: string }) => {
             </div>
 
             <Dialog open={selectedSlot !== null} onOpenChange={() => setSelectedSlot(null)}>
-                <DialogContent>
-                    <DialogTitle>Planifier une réunion</DialogTitle>
-                    {selectedSlot && (
-                        <EventForm
-                            startDate={selectedSlot.start}
-                            endDate={selectedSlot.end}
-                            onSubmit={handleCreateEvent}
-                            onCancel={() => setSelectedSlot(null)}
-                        />
-                    )}
-                </DialogContent>
+                {selectedSlot && (
+                    <MultiForm onSubmit={handleCreateEvent}/>
+                )}
             </Dialog>
-            <DnDCalendar
-                localizer={localizer}
-                style={{height: 600, width: "100%"}}
-                className="border-border border-rounded-md border-solid border-2 rounded-lg"
-                selectable
-                culture={'fr'}
+
+            <Calendar
+                events={events}
                 date={date}
-                onNavigate={handleNavigate}
-                view={view}
-                onView={handleViewChange}
-                showMultiDayTimes={true}
-                resizable
-                popup={true}
-                draggableAccessor={() => true}
-                resizableAccessor={() => true}
-                events={events.map(event => ({...event, start: event.startDate, end: event.endDate}))}
-                eventPropGetter={eventPropGetter}
-                onSelectSlot={handleSelectSlot}
+                onNavigate={setDate}
+                onSelectSlot={setSelectedSlot}
+                onSelectEvent={handleSelectEvent}
                 onEventDrop={handleEventDrop}
                 onEventResize={handleEventResize}
-                onSelectEvent={handleSelectEvent}
-                formats={{
-                    dayFormat: 'ddd Do',
-                }}
-                messages={messages}
             />
         </section>
     );
