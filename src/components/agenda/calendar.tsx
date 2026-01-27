@@ -12,6 +12,7 @@ import type {EventInteractionArgs} from "react-big-calendar/lib/addons/dragAndDr
 import type {SlotInfo} from "react-big-calendar";
 import type {CalendarEvent} from "@/types/CalendarEvent";
 import ShadcnBigCalendar from "@/components/shadcn-big-calendar/shadcn-big-calendar.ts";
+import {isInRange, isRangeFullyInside} from "@/utils/dates.ts";
 
 moment.locale("fr");
 const localizer = momentLocalizer(moment);
@@ -43,6 +44,8 @@ type CalendarPropsUI = {
     onSelectEvent?: (event: CalendarEvent, e: SyntheticEvent<HTMLElement, Event>) => void;
     onEventDrop?: (args: EventInteractionArgs<CalendarEvent>) => void;
     onEventResize?: (args: EventInteractionArgs<CalendarEvent>) => void;
+    unselectable?: Array<{ start: Date, end: Date }>;
+    selectable?: Array<{ start: Date, end: Date }>;
 };
 
 export function Calendar({
@@ -54,6 +57,8 @@ export function Calendar({
                              onSelectEvent,
                              onEventDrop,
                              onEventResize,
+                             unselectable = [],
+                             selectable = []
                          }: CalendarPropsUI) {
     // Gère le view interne
     const [view, setView] = useState<typeof Views[keyof typeof Views]>(Views.WEEK);
@@ -69,8 +74,59 @@ export function Calendar({
         };
     };
 
+    // Désactiver la sélection pour certaines périodes
+    const handleSelecting = (range: { start: Date; end: Date }) => {
+        if (selectable.length > 0) {
+            return selectable.some(zone => isRangeFullyInside(range, zone));
+        }
+
+        return !unselectable.some(zone =>
+            range.start < zone.end && range.end > zone.start
+        );
+    };
+
+
+    // Colorer les slots non sélectionnables
+    const slotStyleGetter: CalendarProps<CalendarEvent>["slotPropGetter"] = (date) => {
+        // 🔒 MODE selectable ONLY
+        if (selectable.length > 0) {
+            const isSelectable = selectable.some(zone => isInRange(date, zone));
+
+            if (!isSelectable) {
+                return {
+                    style: {
+                        backgroundColor: "#f1f5f9", // gris neutre
+                        pointerEvents: "none",
+                    },
+                };
+            }
+
+            return {
+                style: {
+                    backgroundColor: "#dcfce7", // vert clair (autorisé)
+                },
+            };
+        }
+
+        // 🚫 MODE unselectable
+        for (const zone of unselectable) {
+            if (isInRange(date, zone)) {
+                return {
+                    style: {
+                        backgroundColor: "#fee2e2", // rouge clair
+                        pointerEvents: "none",
+                    },
+                };
+            }
+        }
+
+        return {};
+    };
+
+
     return (
         <DnDCalendar
+            enableAutoScroll
             localizer={localizer}
             style={{height: 600, width: "100%"}}
             className={className + " border-border border-rounded-md border-solid border-2 rounded-lg"}
@@ -92,6 +148,11 @@ export function Calendar({
             onEventDrop={onEventDrop}
             onEventResize={onEventResize}
             eventPropGetter={eventPropGetter}
+            onSelecting={handleSelecting}
+            slotPropGetter={slotStyleGetter}
+            step={15}
+            timeslots={4}
+            showMultiDayTimes={true}
         />
     );
 }

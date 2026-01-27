@@ -41,3 +41,56 @@ export const generateTimeSlots = (
 
     return times;
 };
+
+
+export const minutesToTime = (minutes: number): number => {
+    return minutes * 60000
+}
+
+export const generateDurations = (
+    maxHours = 8,
+    stepMinutes = 15
+) => {
+    const maxMinutes = maxHours * 60;
+
+    return Array.from(
+        { length: maxMinutes / stepMinutes },
+        (_, i) => {
+            const minutes = (i + 1) * stepMinutes;
+
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+
+            const label =
+                hours > 0
+                    ? mins > 0
+                        ? `${hours}h${mins}`
+                        : `${hours}h`
+                    : `${mins}min`;
+
+            return {
+                label,
+                value: minutesToTime(minutes),
+            };
+        }
+    );
+};
+
+export const isInRange = (date: Date, range: { start: Date; end: Date }) =>
+    date.getTime() >= range.start.getTime() &&
+    date.getTime() < range.end.getTime();
+
+export const intersects = (
+    a: { start: Date; end: Date },
+    b: { start: Date; end: Date }
+) =>
+    a.start.getTime() < b.end.getTime() &&
+    a.end.getTime() > b.start.getTime();
+
+
+export const isRangeFullyInside = (
+    range: { start: Date; end: Date },
+    zone: { start: Date; end: Date }
+) =>
+    range.start.getTime() >= zone.start.getTime() &&
+    range.end.getTime() <= zone.end.getTime();

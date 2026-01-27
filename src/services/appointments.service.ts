@@ -1,5 +1,5 @@
 import {Service} from "@/services/service";
-import type {IAppointment} from "@/types/IAppointment.ts";
+import type {AppointmentId, IAppointment} from "@/types/IAppointment.ts";
 import {Appointment} from "@/models/appointment.ts";
 import {Query} from "@/utils/query.ts";
 import type {UserId} from "@/types/IUser.ts";
@@ -13,9 +13,9 @@ export class AppointmentsService extends Service<IAppointment, Appointment> {
     /**
      * Récupère une ressource et la transforme en instance du Model.
      */
-    public async search(startDate: Date, endDate: Date, users: UserId[]): Promise<AvailableSlot[]> {
+    public async search(startDate: Date, endDate: Date, users: UserId[], ignoreId?: AppointmentId): Promise<AvailableSlot[]> {
         const query = new Query<IAvailableSlot>(this.url, this.relations);
-        const data = await query.search({startDate, endDate, users});
+        const data = await query.search({startDate, endDate, users, ignoreId});
 
         if (data == null) return [];
 

@@ -8,10 +8,11 @@ import {toDate} from "@/lib/utils.ts";
 export class Appointment extends Model<IAppointment> implements IAppointment {
     name: string;
     notes: string;
-    agenda?: Agenda;
+    agenda?: Agenda[];
     endDate: Date;
     startDate: Date;
     status: AppointmentStatusType;
+    users: string[];
 
     constructor(params: IAppointment) {
         super(params);
@@ -21,6 +22,7 @@ export class Appointment extends Model<IAppointment> implements IAppointment {
         this.startDate = toDate(params.startDate)!;
         this.endDate = toDate(params.endDate)!;
         this.status = params.status instanceof AppointmentStatusType ? params.status : new AppointmentStatusType(params.status);
+        this.users = params.users ?? [];
     }
 
     toCalendarEvent() {

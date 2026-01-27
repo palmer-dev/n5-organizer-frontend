@@ -27,16 +27,8 @@ import {RangePicker} from "@/components/range-picker.tsx";
 import {AvailableSlot} from "@/models/available-slot.ts";
 import {Calendar} from "@/components/agenda/calendar.tsx";
 import {DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select.tsx";
-import {generateTimeSlots, getDaysBetween} from "@/utils/dates";
+import {minutesToTime} from "@/utils/dates";
+import type {Appointment} from "@/models/appointment.ts";
 
 const formSchema = z.object({
     title: z
@@ -58,6 +50,7 @@ const formSchema = z.object({
         }),
     users: z
         .array(z.string()),
+    duration: z.int({error: (issue) => issue.input === undefined ? "The duration must be defined" : "Invalid duration"}),
     timeslot: z
         .object({
             from: z
@@ -79,22 +72,25 @@ const formSchema = z.object({
 
 type FormSchema = z.infer<typeof formSchema>;
 
-export const MultiForm = ({onSubmit: onFormSubmitted}: { onSubmit: (data: FormSchema) => Promise<void> }) => {
+const steps = [
+    {
+        title: "Recherche de créneaux",
+        description: "Recherche de disponibilité de chacun des participants",
+        fields: ["range", "users"],
+    },
+    {
+        title: "Choix du créneau",
+        description: "Blockage du créneau de la réunion",
+        fields: ["title", "timeslot"],
+    },
+];
+
+export const MultiForm = ({appointment, onSubmit: onFormSubmitted}: {
+    appointment?: Appointment,
+    onSubmit: (data: FormSchema) => Promise<void>
+}) => {
     const {data, isLoading} = useSuspenseQuery(usersQueryOptions);
     const searchAppointmentsMutation = useMutation(searchAppointmentsMutationOptions())
-
-    const steps = [
-        {
-            title: "Recherche de créneaux",
-            description: "Recherche de disponibilité de chacun des participants",
-            fields: ["range", "users"],
-        },
-        {
-            title: "Choix du créneau",
-            description: "Blockage du créneau de la réunion",
-            fields: ["title", "timeslot"],
-        },
-    ];
 
     const [date, setDate] = useState(new Date());
     const [currentStep, setCurrentStep] = useState(0);
@@ -105,30 +101,14 @@ export const MultiForm = ({onSubmit: onFormSubmitted}: { onSubmit: (data: FormSc
     const isLastStep = currentStep === steps.length - 1;
     const progress = ((currentStep + 1) / steps.length) * 100;
 
-    const availableDays = useMemo(() => Array.from(
-        new Map(
-            availableSlots
-                .flatMap(slot => getDaysBetween(slot.start, slot.end))
-                .map(day => [day.toDateString(), day])
-        ).values()
-    ), [availableSlots]);
-
-    const [selectedDay, setSelectedDay] = useState<Date | null>(
-        availableDays.length === 1 ? availableDays[0] : null
-    );
-
-    const availableStartTimes = useMemo(() => {
-            return selectedDay ? availableSlots.flatMap(slot => generateTimeSlots(slot, selectedDay)) : []
-        },
-        [availableSlots, selectedDay]);
-
     const form = useForm<FormSchema>({
         resolver: zodResolver(formSchema),
         shouldUnregister: false,
         defaultValues: {
-            title: "",
+            title: appointment?.name ?? "",
             range: undefined,
-            users: [],
+            users: appointment?.users ?? [],
+            duration: minutesToTime(15),
             timeslot: undefined,
         },
         mode: "onChange",
@@ -172,6 +152,7 @@ export const MultiForm = ({onSubmit: onFormSubmitted}: { onSubmit: (data: FormSc
 
     const onSubmit = async (values: FormSchema) => {
         if (!availableSlots.some(s => s.start.getTime() <= values.timeslot.from.getTime() && s.end.getTime() >= values.timeslot.to.getTime())) {
+            console.log("values", values);
             form.setError("timeslot", {
                 type: "manual",
                 message: "Le créneau sélectionné n’est plus disponible",
@@ -275,19 +256,6 @@ export const MultiForm = ({onSubmit: onFormSubmitted}: { onSubmit: (data: FormSc
                             )}
                         />
 
-                        <FormItem>
-                            <Field>
-                                <FieldLabel htmlFor="timeslot">
-                                    Voici les slots disponibles
-                                </FieldLabel>
-                                <Calendar
-                                    date={date}
-                                    onNavigate={setDate}
-                                    events={availableSlots.map(e => e.toCalendarEvent())}
-                                />
-                            </Field>
-                        </FormItem>
-
                         <FormField
                             name="timeslot"
                             control={form.control}
@@ -298,67 +266,30 @@ export const MultiForm = ({onSubmit: onFormSubmitted}: { onSubmit: (data: FormSc
                                             <FieldLabel htmlFor="timeslot">
                                                 Voici les slots disponibles
                                             </FieldLabel>
-
-                                            <div className={"flex gap-3"}>
-                                                {availableDays.length > 1 && (
-                                                    <Select onValueChange={(value) => setSelectedDay(new Date(value))}>
-                                                        <SelectTrigger className="w-full max-w-48">
-                                                            <SelectValue placeholder="Select a day"/>
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectGroup>
-                                                                <SelectLabel>Day</SelectLabel>
-                                                                {availableDays.map(day => (
-                                                                    <SelectItem
-                                                                        key={day.toISOString()}
-                                                                        value={day.toISOString()}
-                                                                    >
-                                                                        {day.toLocaleDateString()}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectGroup>
-                                                        </SelectContent>
-                                                    </Select>
-                                                )}
-
-                                                <Select
-                                                    disabled={!selectedDay}
-                                                    value={field.value?.from.toISOString()}
-                                                    onValueChange={(value) => field.onChange({
-                                                        ...field.value,
-                                                        from: new Date(value),
-                                                        to: new Date(new Date(value).getTime() + 60 * 60000)
-                                                    })}
-                                                >
-                                                    <SelectTrigger className="w-full max-w-48">
-                                                        <SelectValue placeholder="Select a start time"/>
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectGroup>
-                                                            <SelectLabel>Start time</SelectLabel>
-                                                            {availableStartTimes.map(time => (
-                                                                <SelectItem
-                                                                    key={time.toISOString()}
-                                                                    value={time.toISOString()}
-                                                                >
-                                                                    {time.toLocaleTimeString([], {
-                                                                        hour: '2-digit',
-                                                                        minute: '2-digit'
-                                                                    })}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectGroup>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
+                                            <Calendar
+                                                date={date}
+                                                onNavigate={setDate}
+                                                onSelectSlot={(slot) => {
+                                                    console.log(slot);
+                                                    field.onChange({from: slot.start, to: slot.end})
+                                                }}
+                                                selectable={availableSlots.map(slot => ({
+                                                    start: slot.start,
+                                                    end: slot.end
+                                                }))}
+                                                events={(field.value?.from && field.value?.to) ? [{
+                                                    title: "Nouveau RDV",
+                                                    startDate: field.value.from,
+                                                    endDate: field.value.to
+                                                }] : []}
+                                            />
                                             <FieldDescription></FieldDescription>
                                             {fieldState.invalid && (
                                                 <FieldError errors={[fieldState.error]}/>
                                             )}
                                         </Field>
                                     </FormItem>
-                                );
+                                )
                             }}
                         />
                     </FieldGroup>

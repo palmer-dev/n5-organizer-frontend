@@ -11,5 +11,6 @@ export interface IAppointment extends IModel<AppointmentId> {
     startDate: Date;
     endDate: Date;
     status: AppointmentStatusType | string;
-    agenda?: IAgenda;
+    agenda?: IAgenda[];
+    users?: string[]
 }
