@@ -28,12 +28,12 @@ const AgendaViewer = ({calendarId}: { calendarId: string }) => {
         title: string;
         range: DateRange;
         users: string[],
-        timeslot: string,
+        timeslot: DateRange,
     }) => {
         const newEvent: CalendarEvent = {
             title: data.title,
-            startDate: data.range.from!,
-            endDate: data.range.to!,
+            startDate: data.timeslot.from!,
+            endDate: data.timeslot.to!,
             variant: "primary",
         };
 
