@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
     "@daveyplate/better-auth-tanstack": "^1.3.6",
@@ -59,7 +60,8 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.13",
     "vaul": "^1.1.2",
-    "zod": "^4.2.1"
+    "zod": "^4.2.1",
+    "nitro": "npm:nitro-nightly@latest"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
