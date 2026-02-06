@@ -776,8 +776,8 @@ button.rbc-input::-moz-focus-inner {
 }
 
 .rbc-event.event-variant-primary {
-    --event-bg: var(--primary);
-    --event-color: var(--primary-foreground);
+    --event-bg: oklch(from var(--primary) calc(l + 0.2) c h);
+    --event-color: oklch(from var(--primary-foreground) l c h);
     --event-border: hsla(var(--primary), 0.9);
 }
 
@@ -785,6 +785,12 @@ button.rbc-input::-moz-focus-inner {
     --event-bg: var(--secondary);
     --event-color: var(--secondary-foreground);
     --event-border: var(--secondary);
+}
+
+.rbc-event.event-variant-destructive {
+    --event-bg: oklch(from var(--destructive) calc(l + 0.6) c h);
+    --event-color: oklch(from var(--destructive) calc(l - 0.45) c h);
+    --event-border: oklch(from var(--destructive) calc(l - 0.2) calc(c * 1.2) h);
 }
 
 .rbc-event.event-variant-outline {

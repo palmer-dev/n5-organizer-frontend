@@ -4,6 +4,7 @@ import {AppSidebar} from "@/components/app-sidebar.tsx";
 import {SidebarInset, SidebarProvider} from "@/components/ui/sidebar.tsx";
 import {SiteHeader} from "@/components/site-header.tsx";
 import {AuthLoading, RedirectToSignIn, SignedIn} from "@daveyplate/better-auth-ui";
+import {AppLayoutSkeleton} from "@/components/app-layout-skeleton.tsx";
 
 
 export const Route = createFileRoute('/app')({
@@ -16,7 +17,7 @@ function Page() {
     return (
         <>
             <AuthLoading>
-                <div>Auth loading...</div>
+                <AppLayoutSkeleton/>
             </AuthLoading>
 
             <RedirectToSignIn/>

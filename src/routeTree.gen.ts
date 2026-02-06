@@ -12,8 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthAuthViewRouteImport } from './routes/auth/$authView'
-import { Route as OldSingUpIndexRouteImport } from './routes/old/sing-up/index'
-import { Route as OldLoginIndexRouteImport } from './routes/old/login/index'
 import { Route as AppDashboardIndexRouteImport } from './routes/app/dashboard/index'
 import { Route as AppCalendarIndexRouteImport } from './routes/app/calendar/index'
 import { Route as AppCalendarCalendarIdRouteImport } from './routes/app/calendar/$calendarId'
@@ -32,16 +30,6 @@ const IndexRoute = IndexRouteImport.update({
 const AuthAuthViewRoute = AuthAuthViewRouteImport.update({
   id: '/auth/$authView',
   path: '/auth/$authView',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OldSingUpIndexRoute = OldSingUpIndexRouteImport.update({
-  id: '/old/sing-up/',
-  path: '/old/sing-up/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OldLoginIndexRoute = OldLoginIndexRouteImport.update({
-  id: '/old/login/',
-  path: '/old/login/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppDashboardIndexRoute = AppDashboardIndexRouteImport.update({
@@ -73,8 +61,6 @@ export interface FileRoutesByFullPath {
   '/app/calendar/$calendarId': typeof AppCalendarCalendarIdRoute
   '/app/calendar': typeof AppCalendarIndexRoute
   '/app/dashboard': typeof AppDashboardIndexRoute
-  '/old/login': typeof OldLoginIndexRoute
-  '/old/sing-up': typeof OldSingUpIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -84,8 +70,6 @@ export interface FileRoutesByTo {
   '/app/calendar/$calendarId': typeof AppCalendarCalendarIdRoute
   '/app/calendar': typeof AppCalendarIndexRoute
   '/app/dashboard': typeof AppDashboardIndexRoute
-  '/old/login': typeof OldLoginIndexRoute
-  '/old/sing-up': typeof OldSingUpIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,8 +80,6 @@ export interface FileRoutesById {
   '/app/calendar/$calendarId': typeof AppCalendarCalendarIdRoute
   '/app/calendar/': typeof AppCalendarIndexRoute
   '/app/dashboard/': typeof AppDashboardIndexRoute
-  '/old/login/': typeof OldLoginIndexRoute
-  '/old/sing-up/': typeof OldSingUpIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -109,8 +91,6 @@ export interface FileRouteTypes {
     | '/app/calendar/$calendarId'
     | '/app/calendar'
     | '/app/dashboard'
-    | '/old/login'
-    | '/old/sing-up'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -120,8 +100,6 @@ export interface FileRouteTypes {
     | '/app/calendar/$calendarId'
     | '/app/calendar'
     | '/app/dashboard'
-    | '/old/login'
-    | '/old/sing-up'
   id:
     | '__root__'
     | '/'
@@ -131,16 +109,12 @@ export interface FileRouteTypes {
     | '/app/calendar/$calendarId'
     | '/app/calendar/'
     | '/app/dashboard/'
-    | '/old/login/'
-    | '/old/sing-up/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
   AuthAuthViewRoute: typeof AuthAuthViewRoute
-  OldLoginIndexRoute: typeof OldLoginIndexRoute
-  OldSingUpIndexRoute: typeof OldSingUpIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -164,20 +138,6 @@ declare module '@tanstack/react-router' {
       path: '/auth/$authView'
       fullPath: '/auth/$authView'
       preLoaderRoute: typeof AuthAuthViewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/old/sing-up/': {
-      id: '/old/sing-up/'
-      path: '/old/sing-up'
-      fullPath: '/old/sing-up'
-      preLoaderRoute: typeof OldSingUpIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/old/login/': {
-      id: '/old/login/'
-      path: '/old/login'
-      fullPath: '/old/login'
-      preLoaderRoute: typeof OldLoginIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/dashboard/': {
@@ -233,8 +193,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
   AuthAuthViewRoute: AuthAuthViewRoute,
-  OldLoginIndexRoute: OldLoginIndexRoute,
-  OldSingUpIndexRoute: OldSingUpIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

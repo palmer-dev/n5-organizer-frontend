@@ -2,117 +2,164 @@
 
 import {Button} from "@/components/ui/button";
 import {Dialog} from "@/components/ui/dialog";
-import {Plus} from "lucide-react";
-import moment from 'moment/min/moment-with-locales';
-import {type SyntheticEvent, useState} from "react";
-import {type SlotInfo} from "react-big-calendar";
-import type {EventInteractionArgs} from "react-big-calendar/lib/addons/dragAndDrop";
-import type {CalendarEvent} from "@/types/CalendarEvent.ts";
-import {useSuspenseQuery} from "@tanstack/react-query";
-import {agendaAppointmentsQueryOptions} from "@/features/agendas/agenda-appointments-query-options.ts";
-import {MultiForm} from "@/components/multistep-form/form.tsx";
+import {Plus, CalendarDays} from "lucide-react";
+import moment from "moment/min/moment-with-locales";
+import {useCallback, useMemo, useState} from "react";
+import type {CalendarEvent} from "@/types/CalendarEvent";
+import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
+import {agendaAppointmentsQueryOptions} from "@/features/agendas/agenda-appointments-query-options";
+import {MultiForm} from "@/components/multistep-form/form";
 import type {DateRange} from "react-day-picker";
-import {Calendar} from "@/components/agenda/calendar.tsx";
+import {Calendar} from "@/components/agenda/calendar";
+import {createAppointmentsMutationOptions} from "@/features/appointments/create-mutation-options";
+import AppointmentStatusType from "@/types/AppointmentStatusType";
+import type {CustomContextMenuItem} from "@/types/CustomContextMenuItem";
+import {deleteAppointmentsMutationOptions} from "@/features/appointments/delete-mutation-options";
+import type {AgendaId} from "@/types/IAgenda";
+import type {IUser} from "@/types/IUser";
+import {updateStatusAppointmentsMutationOptions} from "@/features/appointments/update-status-mutation-options";
 
+moment.locale("fr");
 
-moment.locale('fr');
+const AgendaViewer = ({calendarId}: { calendarId: AgendaId }) => {
+    const {data: appointments} = useSuspenseQuery(
+        agendaAppointmentsQueryOptions(calendarId)
+    );
 
-const AgendaViewer = ({calendarId}: { calendarId: string }) => {
-    const {data: appointments, isLoading, isError} = useSuspenseQuery(agendaAppointmentsQueryOptions(calendarId))
+    // Mutations
+    const createAppointment = useMutation(
+        createAppointmentsMutationOptions(calendarId)
+    );
+    const updateStatusAppointment = useMutation(
+        updateStatusAppointmentsMutationOptions(calendarId)
+    );
+    const deleteAppointment = useMutation(
+        deleteAppointmentsMutationOptions(calendarId)
+    );
 
     const [date, setDate] = useState(new Date());
-    const [events, setEvents] = useState<CalendarEvent[]>((appointments ?? [])?.map(app => app.toCalendarEvent()));
-    const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
+
+    const events = useMemo(
+        () => (appointments ?? []).map((app) => app.toCalendarEvent()),
+        [appointments]
+    );
 
     const handleCreateEvent = async (data: {
         title: string;
         range: DateRange;
-        users: string[],
-        timeslot: DateRange,
+        users: string[];
+        timeslot: DateRange;
     }) => {
-        const newEvent: CalendarEvent = {
-            title: data.title,
+        await createAppointment.mutateAsync({
+            name: data.title,
+            notes: "",
             startDate: data.timeslot.from!,
             endDate: data.timeslot.to!,
-            variant: "primary",
-        };
+            users: data.users as unknown as IUser[],
+        });
 
-        setEvents((previous) => [...previous, newEvent]);
-        setSelectedSlot(null);
+        setDialogOpen(false);
     };
 
-    const handleEventDrop = ({event, start, end}: EventInteractionArgs<CalendarEvent>) => {
-        const nextStart = new Date(start);
-        const normalizedEnd = new Date(end);
-        const updatedEvents = events.map((existingEvent) =>
-            existingEvent === event
-                ? {...existingEvent, start: nextStart, end: normalizedEnd}
-                : existingEvent
-        );
-        setEvents(updatedEvents);
-    };
+    const handleChangeState = useCallback(
+        (event: CalendarEvent, state: AppointmentStatusType) => {
+            void updateStatusAppointment.mutateAsync({
+                id: event.id,
+                status: state,
+            });
+        },
+        [updateStatusAppointment]
+    );
 
-    const handleEventResize = ({event, start, end}: EventInteractionArgs<CalendarEvent>) => {
-        const nextStart = new Date(start);
-        const nextEnd = new Date(end);
-        const updatedEvents = events.map((existingEvent) =>
-            existingEvent === event
-                ? {...existingEvent, start: nextStart, end: nextEnd}
-                : existingEvent
-        );
+    const handleDeleteEvent = useCallback(
+        (event: CalendarEvent) => {
+            void deleteAppointment.mutateAsync(event.id);
+        },
+        [deleteAppointment]
+    );
 
-        setEvents(updatedEvents);
-    };
-
-    const handleSelectEvent = (event: CalendarEvent, e: SyntheticEvent<HTMLElement, Event>) => {
-        console.log('event', event);
-        console.log('start', e);
-    }
-
-    if (isLoading) {
-        return <div>Chargement..</div>
-    }
-
-    if (isError) {
-        return <div>Erreur lors du chargement du calendrier</div>;
-    }
+    const contextMenuItems: CustomContextMenuItem[] = useMemo(
+        () => [
+            {
+                title: "Valider la présence",
+                showIf: (event) => event.variant !== "primary",
+                onClick: (event) =>
+                    handleChangeState(event, AppointmentStatusType.Validated),
+            },
+            {
+                title: "Mettre en attente",
+                showIf: (event) => event.variant !== "outline",
+                onClick: (event) =>
+                    handleChangeState(event, AppointmentStatusType.Pending),
+            },
+            {
+                title: "Refuser le rendez-vous",
+                showIf: (event) => event.variant !== "destructive",
+                onClick: (event) =>
+                    handleChangeState(event, AppointmentStatusType.Refused),
+            },
+            {
+                title: "Supprimer",
+                showIf: () => true,
+                onClick: handleDeleteEvent,
+            },
+        ],
+        [handleChangeState, handleDeleteEvent]
+    );
 
     return (
         <section className="space-y-4 col-span-full">
-            <div className="flex flex-wrap items-center gap-3 justify-between">
-                <p className="text-muted-foreground">
-                    Add a meeting, workshop, or reminder to the demo.
-                </p>
-                <Button
-                    aria-label="Créer une nouvelle réunion"
-                    onClick={() => setSelectedSlot({
-                        start: new Date(),
-                        end: new Date(),
-                        slots: [],
-                        action: "click"
-                    })}
-                >
-                    <Plus/>
+            {/* Header */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-primary">
+                        <CalendarDays className="h-5 w-5"/>
+                        <p className="font-medium">
+                            {moment(date).format("dddd D MMMM YYYY")}
+                        </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        Cliquez sur une plage horaire pour consulter ou modifier un
+                        rendez-vous.
+                    </p>
+                </div>
+
+                <Button onClick={() => setDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-1"/>
                     Planifier une réunion
                 </Button>
             </div>
 
-            <Dialog open={selectedSlot !== null} onOpenChange={() => setSelectedSlot(null)}>
-                {selectedSlot && (
-                    <MultiForm onSubmit={handleCreateEvent}/>
-                )}
+            {/* Dialog création */}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                {dialogOpen && <MultiForm onSubmit={handleCreateEvent}/>}
             </Dialog>
 
-            <Calendar
-                events={events}
-                date={date}
-                onNavigate={setDate}
-                onSelectSlot={setSelectedSlot}
-                onSelectEvent={handleSelectEvent}
-                onEventDrop={handleEventDrop}
-                onEventResize={handleEventResize}
-            />
+            {/* Empty state */}
+            {events.length === 0 && (
+                <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground mb-1">
+                        Aucun rendez-vous planifié
+                    </p>
+                    <p>
+                        Commencez par créer votre premier rendez-vous pour organiser votre
+                        agenda.
+                    </p>
+                </div>
+            )}
+
+            {/* Calendar */}
+            <div className="rounded-lg border bg-background shadow-sm">
+                <Calendar
+                    events={events}
+                    date={date}
+                    contextMenuItems={contextMenuItems}
+                    onNavigate={setDate}
+                />
+            </div>
         </section>
     );
 };
-export default AgendaViewer
+
+export default AgendaViewer;

@@ -7,7 +7,7 @@ export interface IAvailableSlot {
     name: string,
     start: string;
     end: string;
-    variation?: "primary" | "secondary";
+    variation?: "primary" | "secondary" | "outline" | "destructive";
 }
 
 export class AvailableSlot {
@@ -15,7 +15,7 @@ export class AvailableSlot {
     name: string;
     end: Date;
     start: Date;
-    variation: "primary" | "secondary" = "primary";
+    variation: "primary" | "secondary" | "outline" | "destructive" = "primary";
 
     constructor(params: IAvailableSlot) {
         this.id = sha256(params.start + params.end).toString();

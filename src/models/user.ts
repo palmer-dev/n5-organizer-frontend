@@ -17,4 +17,8 @@ export class User extends Model<IUser> implements IUser {
         this.email = data.email;
         this.timezone = data.timezone;
     }
+
+    get fullName() {
+        return this.firstname + " " + this.lastname;
+    }
 }

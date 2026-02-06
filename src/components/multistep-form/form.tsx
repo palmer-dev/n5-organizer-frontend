@@ -21,7 +21,7 @@ import {MultiSelect} from "@/components/multi-select.tsx";
 import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
 import {usersQueryOptions} from "@/features/users/users-query-options.ts";
 import {Form, FormControl, FormField, FormItem} from "@/components/ui/form.tsx";
-import {searchAppointmentsMutationOptions} from "@/features/appointments/search-query-options.ts";
+import {searchAppointmentsMutationOptions} from "@/features/appointments/search-mutation-options.ts";
 import type {UserId} from "@/types/IUser.ts";
 import {RangePicker} from "@/components/range-picker.tsx";
 import {AvailableSlot} from "@/models/available-slot.ts";
@@ -29,6 +29,7 @@ import {Calendar} from "@/components/agenda/calendar.tsx";
 import {DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import {minutesToTime} from "@/utils/dates";
 import type {Appointment} from "@/models/appointment.ts";
+import type {AppointmentId} from "@/types/IAppointment.ts";
 
 const formSchema = z.object({
     title: z
@@ -152,7 +153,6 @@ export const MultiForm = ({appointment, onSubmit: onFormSubmitted}: {
 
     const onSubmit = async (values: FormSchema) => {
         if (!availableSlots.some(s => s.start.getTime() <= values.timeslot.from.getTime() && s.end.getTime() >= values.timeslot.to.getTime())) {
-            console.log("values", values);
             form.setError("timeslot", {
                 type: "manual",
                 message: "Le créneau sélectionné n’est plus disponible",
@@ -162,7 +162,7 @@ export const MultiForm = ({appointment, onSubmit: onFormSubmitted}: {
 
         await onFormSubmitted(values)
             .then(() => toast.success("Évènement enregistré"))
-            .catch(() => toast.error("Erreur lors de l'enregistrement"));
+            .catch((error) => toast.error("Erreur lors de l'enregistrement") && console.log(error));
     };
 
     if (isLoading) return (<span><Spinner/> Loading...</span>)
@@ -267,6 +267,7 @@ export const MultiForm = ({appointment, onSubmit: onFormSubmitted}: {
                                                 Voici les slots disponibles
                                             </FieldLabel>
                                             <Calendar
+                                                isSelectable={true}
                                                 date={date}
                                                 onNavigate={setDate}
                                                 onSelectSlot={(slot) => {
@@ -278,6 +279,7 @@ export const MultiForm = ({appointment, onSubmit: onFormSubmitted}: {
                                                     end: slot.end
                                                 }))}
                                                 events={(field.value?.from && field.value?.to) ? [{
+                                                    id: "ok" as unknown as AppointmentId,
                                                     title: "Nouveau RDV",
                                                     startDate: field.value.from,
                                                     endDate: field.value.to

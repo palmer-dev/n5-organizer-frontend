@@ -1,8 +1,9 @@
 // src/utils/query.ts
 
 import type {ModelRelations} from "@/types/ModelRelations.ts";
+import type {IModel} from "@/types/IModel.ts";
 
-export class Query<T> {
+export class Query<T extends IModel> {
     private readonly baseUrl: string;
     private readonly resource: string;
     protected relations: Record<string, ModelRelations> = {}
@@ -22,7 +23,7 @@ export class Query<T> {
      * Fetch d'un item par id (ou param optionnel).
      * Retourne null si status === 204 (No Content) ou si body === null.
      */
-    public async get(id = ""): Promise<T | null> {
+    public async get<R = T>(id = ""): Promise<R | null> {
         const url = this.buildUrl(id);
         const response = await fetch(url, {method: "GET", credentials: "include"});
 
@@ -35,7 +36,7 @@ export class Query<T> {
 
         // parse JSON safely
         const parsed = (await this.safeJsonParse(response));
-        return parsed as T | null;
+        return parsed as R | null;
     }
 
     /**
@@ -104,15 +105,230 @@ export class Query<T> {
     }
 
     /**
+     * Création d'une ressource (POST)
+     */
+    public async create(data: Partial<T>): Promise<T | null> {
+        const url = this.buildUrl();
+
+        let response: Response;
+
+        try {
+            response = await fetch(url, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+        } catch (error) {
+            // Erreur réseau (timeout, DNS, CORS, etc.)
+            throw new Error(`Network error while calling POST ${url}: ${String(error)}`);
+        }
+
+        if (!response.ok) {
+            let errorBody: unknown = null;
+
+            try {
+                errorBody = await this.safeJsonParse(response);
+            } catch {
+                // ignore JSON parse error
+            }
+
+            throw new Error(
+                `HTTP error ${response.status} when POST ${url}` +
+                (errorBody ? ` - ${JSON.stringify(errorBody)}` : "")
+            );
+        }
+
+        // 204 No Content
+        if (response.status === 204) {
+            return null;
+        }
+
+        const parsed = await this.safeJsonParse(response);
+        return parsed as T | null;
+    }
+
+    /**
+     * Mise à jour d'une ressource (PUT)
+     */
+    public async update(
+        id: T["id"],
+        data: Partial<Omit<T, "id">>
+    ): Promise<T | null> {
+        const url = this.buildUrl(id);
+
+        let response: Response;
+
+        try {
+            response = await fetch(url, {
+                method: "PUT",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+        } catch (error) {
+            // Erreur réseau (timeout, DNS, CORS, etc.)
+            throw new Error(`Network error while calling POST ${url}: ${String(error)}`);
+        }
+
+        if (!response.ok) {
+            let errorBody: unknown = null;
+
+            try {
+                errorBody = await this.safeJsonParse(response);
+            } catch {
+                // ignore JSON parse error
+            }
+
+            throw new Error(
+                `HTTP error ${response.status} when POST ${url}` +
+                (errorBody ? ` - ${JSON.stringify(errorBody)}` : "")
+            );
+        }
+
+        // 204 No Content
+        if (response.status === 204) {
+            return null;
+        }
+
+        const parsed = await this.safeJsonParse(response);
+        return parsed as T | null;
+    }
+
+    /**
+     * Mise à jour d'une ressource (PUT)
+     */
+    public async put<ST = Partial<Omit<T, "id">>>(
+        id: T["id"],
+        data: ST,
+        action?: string
+    ): Promise<T | null> {
+        const url = this.buildUrl(id, action);
+
+        let response: Response;
+
+        try {
+            response = await fetch(url, {
+                method: "PUT",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+        } catch (error) {
+            // Erreur réseau (timeout, DNS, CORS, etc.)
+            throw new Error(`Network error while calling POST ${url}: ${String(error)}`);
+        }
+
+        if (!response.ok) {
+            let errorBody: unknown = null;
+
+            try {
+                errorBody = await this.safeJsonParse(response);
+            } catch {
+                // ignore JSON parse error
+            }
+
+            throw new Error(
+                `HTTP error ${response.status} when POST ${url}` +
+                (errorBody ? ` - ${JSON.stringify(errorBody)}` : "")
+            );
+        }
+
+        // 204 No Content
+        if (response.status === 204) {
+            return null;
+        }
+
+        const parsed = await this.safeJsonParse(response);
+        return parsed as T | null;
+    }
+
+    /**
+     * Mise à jour d'une ressource (PUT)
+     */
+    public async delete(id: T['id']): Promise<T | null> {
+        const url = this.buildUrl(id);
+
+        let response: Response;
+
+        try {
+            response = await fetch(url, {
+                method: "DELETE",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                }
+            });
+        } catch (error) {
+            // Erreur réseau (timeout, DNS, CORS, etc.)
+            throw new Error(`Network error while calling POST ${url}: ${String(error)}`);
+        }
+
+        if (!response.ok) {
+            let errorBody: unknown = null;
+
+            try {
+                errorBody = await this.safeJsonParse(response);
+            } catch {
+                // ignore JSON parse error
+            }
+
+            throw new Error(
+                `HTTP error ${response.status} when POST ${url}` +
+                (errorBody ? ` - ${JSON.stringify(errorBody)}` : "")
+            );
+        }
+
+        // 204 No Content
+        if (response.status === 204) {
+            return null;
+        }
+
+        const parsed = await this.safeJsonParse(response);
+        return parsed as T | null;
+    }
+
+    /**
      * Construit l'URL complète en échappant l'id/param si fourni.
      */
-    private buildUrl(param?: string): string {
-        if (!param) return `${this.baseUrl}/${this.resource}`;
-        // si param contient '/' il peut être un sous chemin — laisser l'utilisateur s'en charger, mais encoder les segments,
-        // on encode tout param pour éviter problèmes
-        const encoded = encodeURIComponent(param);
-        const urlSuffix = Object.values(this.relations).map(item => item.url);
-        return `${this.baseUrl}/${this.resource}/${encoded}${urlSuffix}`;
+    private buildUrl(param?: string, action?: string): string {
+        const parts: string[] = [this.baseUrl, this.resource];
+
+        if (param) {
+            // si l'utilisateur passe déjà un chemin (ex: "123/foo") on filtre et encode pour la sécurité
+            const encodedParam = param
+                .split("/")
+                .map(p => encodeURIComponent(p))
+                .join("/");
+
+            parts.push(encodedParam);
+        }
+
+        // relations intermédiaires
+        if (this.relations) {
+            Object.values(this.relations).forEach(item => {
+                if (item?.url) {
+                    parts.push(encodeURIComponent(item.url));
+                }
+            });
+        }
+
+        // action finale
+        if (action) {
+            parts.push(encodeURIComponent(action));
+        }
+
+        return parts.join("/");
     }
 
     /**

@@ -40,7 +40,7 @@ const data: DataType = {
             icon: IconDashboard,
         },
         {
-            title: "Calendrier",
+            title: "Calendriers",
             url: "/app/calendar",
             icon: IconListDetails,
         },

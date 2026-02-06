@@ -1,36 +1,67 @@
-// src/routes/posts/$postId.tsx
-import {createFileRoute} from '@tanstack/react-router'
+import {createFileRoute, Link} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import AgendaViewer from "@/components/agenda";
-import {agendaQueryOptions} from "@/features/agendas/agenda-query-options.ts";
-
-const startOfToday = new Date();
-startOfToday.setHours(0, 0, 0, 0);
+import {agendaQueryOptions} from "@/features/agendas/agenda-query-options";
+import type {AgendaId} from "@/types/IAgenda";
+import {Skeleton} from "@/components/ui/skeleton";
+import {ChevronLeft, CalendarDays} from "lucide-react";
 
 const Page = () => {
-    const {calendarId} = Route.useParams()
+    const {calendarId} = Route.useParams();
 
-    const {data: agenda, isLoading, isError} = useSuspenseQuery(agendaQueryOptions(calendarId))
-
-    if (isLoading) {
-        return <div>Chargement..</div>
-    }
-
-    if (isError) {
-        return <div>Erreur lors du chargement du calendrier</div>;
-    }
+    const {data: agenda} = useSuspenseQuery(
+        agendaQueryOptions(calendarId as AgendaId)
+    );
 
     return (
-        <main
-            className={"grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4"}>
+        <main className="px-4 lg:px-6 space-y-6">
+            {/* Header */}
+            <header className="flex flex-col gap-2">
+                <Link
+                    to="/app/calendar"
+                    className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary w-fit"
+                >
+                    <ChevronLeft className="h-4 w-4"/>
+                    Calendriers
+                </Link>
 
-            <h1 className={"text-2xl/7 font-bold text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight"}>Agenda {agenda?.name}</h1>
+                <div className="flex items-center gap-3">
+                    <CalendarDays className="h-6 w-6 text-primary"/>
+                    <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                        {agenda?.name}
+                    </h1>
+                </div>
+            </header>
 
-            <AgendaViewer calendarId={calendarId}/>
+            {/* Contenu principal */}
+            <AgendaViewer calendarId={calendarId as AgendaId}/>
         </main>
-    )
-}
+    );
+};
 
-export const Route = createFileRoute('/app/calendar/$calendarId')({
+/**
+ * Fallback Suspense
+ */
+const Loading = () => (
+    <main className="px-4 lg:px-6 space-y-6">
+        <Skeleton className="h-6 w-48"/>
+        <Skeleton className="h-[500px] w-full rounded-lg"/>
+    </main>
+);
+
+/**
+ * Error boundary
+ */
+const ErrorComponent = () => (
+    <main className="px-4 lg:px-6">
+        <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
+            Erreur lors du chargement du calendrier
+        </div>
+    </main>
+);
+
+export const Route = createFileRoute("/app/calendar/$calendarId")({
     component: Page,
-})
+    pendingComponent: Loading,
+    errorComponent: ErrorComponent,
+});
