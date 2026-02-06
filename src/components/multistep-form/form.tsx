@@ -30,6 +30,7 @@ import {DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitl
 import {minutesToTime} from "@/utils/dates";
 import type {Appointment} from "@/models/appointment.ts";
 import type {AppointmentId} from "@/types/IAppointment.ts";
+import {authClient} from "@/lib/auth-client.ts";
 
 const formSchema = z.object({
     title: z
@@ -90,6 +91,8 @@ export const MultiForm = ({appointment, onSubmit: onFormSubmitted}: {
     appointment?: Appointment,
     onSubmit: (data: FormSchema) => Promise<void>
 }) => {
+    const {data: session} = authClient.useSession()
+
     const {data, isLoading} = useSuspenseQuery(usersQueryOptions);
     const searchAppointmentsMutation = useMutation(searchAppointmentsMutationOptions())
 
@@ -108,7 +111,7 @@ export const MultiForm = ({appointment, onSubmit: onFormSubmitted}: {
         defaultValues: {
             title: appointment?.name ?? "",
             range: undefined,
-            users: appointment?.users ?? [],
+            users: appointment?.users.map(user => user.id) ?? [],
             duration: minutesToTime(15),
             timeslot: undefined,
         },
@@ -117,11 +120,14 @@ export const MultiForm = ({appointment, onSubmit: onFormSubmitted}: {
 
     const usersList = useMemo(() => {
         if (Array.isArray(data)) {
-            return data.map(item => ({value: item.id, label: `${item.firstname} ${item.lastname}`}));
+            return data.filter(item => item.id !== session?.user.id).map(item => ({
+                value: item.id,
+                label: `${item.firstname} ${item.lastname}`
+            }));
         }
 
         return [];
-    }, [data]);
+    }, [data, session]);
 
     const handleNextButton = async () => {
         const currentFields = steps[currentStep].fields;

@@ -119,9 +119,9 @@ const AgendaViewer = ({calendarId}: { calendarId: AgendaId }) => {
                             {moment(date).format("dddd D MMMM YYYY")}
                         </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                        Cliquez sur une plage horaire pour consulter ou modifier un
-                        rendez-vous.
+                    <p className="text-sm text-muted-foreground max-w-3xl">
+                        Gérez vos rendez vous, et créez de nouveau avec l'assistant de planification. Pour modifier un
+                        évènement, clique droit sur l'évènement et différentes actions vous seront proposées
                     </p>
                 </div>
 
