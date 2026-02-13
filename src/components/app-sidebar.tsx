@@ -16,7 +16,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import {authClient} from "@/lib/auth-client.ts";
+import {useAuthUser} from "@/hooks/use-auth-user.ts";
 
 type DataType = {
     user: {
@@ -48,7 +48,7 @@ const data: DataType = {
 }
 
 export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
-    const {data: session} = authClient.useSession()
+    const {user} = useAuthUser();
 
     return (
         <Sidebar collapsible="offcanvas" {...props}>
@@ -71,8 +71,8 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
                 <NavMain items={data.navMain}/>
             </SidebarContent>
             <SidebarFooter>
-                {session &&
-                    <NavUser user={session?.user}/>
+                {user &&
+                    <NavUser user={user}/>
                 }
             </SidebarFooter>
         </Sidebar>

@@ -40,4 +40,17 @@ export class AppointmentsService extends Service<IAppointment, Appointment> {
 
         return null;
     }
+
+    /**
+     * Met à jour la description (notes) d'un rendez-vous
+     */
+    public async updateDescription(id: IAppointment["id"], notes: string): Promise<Appointment | null> {
+        const query = new Query<IAppointment>(this.url);
+        const updated = await query.update(id, { notes });
+
+        if (updated)
+            return new this.model(updated);
+
+        return null;
+    }
 }

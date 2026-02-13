@@ -18,6 +18,12 @@ import {deleteAppointmentsMutationOptions} from "@/features/appointments/delete-
 import type {AgendaId} from "@/types/IAgenda";
 import type {IUser} from "@/types/IUser";
 import {updateStatusAppointmentsMutationOptions} from "@/features/appointments/update-status-mutation-options";
+import {
+    updateDescriptionAppointmentsMutationOptions
+} from "@/features/appointments/update-description-mutation-options";
+import {EditAppointmentForm} from "@/components/edit-appointment-form";
+import {AppointmentDetailsModal} from "@/components/appointment-details-modal";
+import type {Appointment} from "@/models/appointment";
 
 moment.locale("fr");
 
@@ -33,12 +39,18 @@ const AgendaViewer = ({calendarId}: { calendarId: AgendaId }) => {
     const updateStatusAppointment = useMutation(
         updateStatusAppointmentsMutationOptions(calendarId)
     );
+    const updateDescriptionAppointment = useMutation(
+        updateDescriptionAppointmentsMutationOptions(calendarId)
+    );
     const deleteAppointment = useMutation(
         deleteAppointmentsMutationOptions(calendarId)
     );
 
     const [date, setDate] = useState(new Date());
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+    const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
     const events = useMemo(
         () => (appointments ?? []).map((app) => app.toCalendarEvent()),
@@ -79,8 +91,62 @@ const AgendaViewer = ({calendarId}: { calendarId: AgendaId }) => {
         [deleteAppointment]
     );
 
+    const handleViewDetails = useCallback(
+        (event: CalendarEvent) => {
+            const appointment = appointments?.find(app => app.id === event.id);
+            if (appointment) {
+                setSelectedAppointment(appointment);
+                setDetailsDialogOpen(true);
+            }
+        },
+        [appointments]
+    );
+
+    const handleEditEvent = useCallback(
+        (event: CalendarEvent) => {
+            const appointment = appointments?.find(app => app.id === event.id);
+            if (appointment) {
+                setSelectedAppointment(appointment);
+                setEditDialogOpen(true);
+            }
+        },
+        [appointments]
+    );
+
+    const handleEditFromDetails = useCallback(() => {
+        setDetailsDialogOpen(false);
+        setEditDialogOpen(true);
+    }, []);
+
+    const handleDeleteFromDetails = useCallback(() => {
+        if (!selectedAppointment) return;
+        void deleteAppointment.mutateAsync(selectedAppointment.id);
+        setDetailsDialogOpen(false);
+        setSelectedAppointment(null);
+    }, [selectedAppointment, deleteAppointment]);
+
+    const handleUpdateDescription = async (data: { notes: string }) => {
+        if (!selectedAppointment) return;
+
+        await updateDescriptionAppointment.mutateAsync({
+            id: selectedAppointment.id,
+            notes: data.notes,
+        });
+
+        setEditDialogOpen(false);
+        setSelectedAppointment(null);
+    };
+
     const contextMenuItems: CustomContextMenuItem[] = useMemo(
         () => [
+            {
+                title: "Voir les détails",
+                onClick: handleViewDetails,
+            },
+            {
+                title: "Éditer",
+                onClick: handleEditEvent,
+            },
             {
                 title: "Valider la présence",
                 showIf: (event) => event.variant !== "primary",
@@ -105,7 +171,7 @@ const AgendaViewer = ({calendarId}: { calendarId: AgendaId }) => {
                 onClick: handleDeleteEvent,
             },
         ],
-        [handleChangeState, handleDeleteEvent]
+        [handleChangeState, handleDeleteEvent, handleEditEvent, handleViewDetails]
     );
 
     return (
@@ -134,6 +200,27 @@ const AgendaViewer = ({calendarId}: { calendarId: AgendaId }) => {
             {/* Dialog création */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 {dialogOpen && <MultiForm onSubmit={handleCreateEvent}/>}
+            </Dialog>
+
+            {/* Dialog détails */}
+            <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+                {detailsDialogOpen && selectedAppointment && (
+                    <AppointmentDetailsModal
+                        appointment={selectedAppointment}
+                        onEdit={handleEditFromDetails}
+                        onDelete={handleDeleteFromDetails}
+                    />
+                )}
+            </Dialog>
+
+            {/* Dialog édition */}
+            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                {editDialogOpen && selectedAppointment && (
+                    <EditAppointmentForm
+                        appointment={selectedAppointment}
+                        onSubmit={handleUpdateDescription}
+                    />
+                )}
             </Dialog>
 
             {/* Empty state */}
