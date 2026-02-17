@@ -149,22 +149,22 @@ export function Calendar({
     )
 
     return (
-        <>
+        <div className="p-4 sm:p-6">
             <DnDCalendar
                 enableAutoScroll
                 localizer={localizer}
-                style={{height: 600, width: "100%"}}
-                className={className + " border-border border-rounded-md border-solid border-2 rounded-lg"}
+                style={{height: 650, width: "100%"}}
+                className={`${className || ''} rbc-calendar-modern`}
                 culture="fr"
                 selectable={isSelectable}
                 popup
                 date={date}
-                view={view} // ici on utilise le state interne
+                view={view}
                 events={events.map(e => ({...e, start: e.startDate, end: e.endDate}))}
                 messages={messages}
                 formats={{dayFormat: "ddd Do"}}
                 onNavigate={onNavigate}
-                onView={handleViewChange} // met à jour le view interne
+                onView={handleViewChange}
                 onSelectSlot={onSelectSlot}
                 onSelectEvent={onSelectEvent}
                 eventPropGetter={eventPropGetter}
@@ -177,6 +177,6 @@ export function Calendar({
                     event: EventComponent
                 }}
             />
-        </>
+        </div>
     );
 }

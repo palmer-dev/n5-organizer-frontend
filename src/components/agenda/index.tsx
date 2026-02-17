@@ -175,24 +175,30 @@ const AgendaViewer = ({calendarId}: { calendarId: AgendaId }) => {
     );
 
     return (
-        <section className="space-y-4 col-span-full">
-            {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-primary">
-                        <CalendarDays className="h-5 w-5"/>
-                        <p className="font-medium">
+        <section className="space-y-6 col-span-full">
+            {/* Header amélioré */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-md bg-primary/10">
+                            <CalendarDays className="h-4 w-4 text-primary"/>
+                        </div>
+                        <h2 className="text-lg font-semibold capitalize">
                             {moment(date).format("dddd D MMMM YYYY")}
-                        </p>
+                        </h2>
                     </div>
-                    <p className="text-sm text-muted-foreground max-w-3xl">
-                        Gérez vos rendez vous, et créez de nouveau avec l'assistant de planification. Pour modifier un
-                        évènement, clique droit sur l'évènement et différentes actions vous seront proposées
+                    <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+                        Gérez vos rendez-vous et créez-en de nouveaux avec l'assistant de planification.
+                        <span className="hidden sm:inline"> Faites un clic droit sur un événement pour accéder aux actions disponibles.</span>
                     </p>
                 </div>
 
-                <Button onClick={() => setDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-1"/>
+                <Button
+                    onClick={() => setDialogOpen(true)}
+                    size="default"
+                    className="sm:self-start shadow-sm hover:shadow-md transition-shadow"
+                >
+                    <Plus className="h-4 w-4 mr-2"/>
                     Planifier une réunion
                 </Button>
             </div>
@@ -223,28 +229,45 @@ const AgendaViewer = ({calendarId}: { calendarId: AgendaId }) => {
                 )}
             </Dialog>
 
-            {/* Empty state */}
+            {/* Empty state amélioré */}
             {events.length === 0 && (
-                <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-                    <p className="font-medium text-foreground mb-1">
-                        Aucun rendez-vous planifié
-                    </p>
-                    <p>
-                        Commencez par créer votre premier rendez-vous pour organiser votre
-                        agenda.
-                    </p>
+                <div className="rounded-xl border-2 border-dashed bg-muted/20 p-12 text-center">
+                    <div className="mx-auto max-w-md space-y-4">
+                        <div className="mx-auto w-fit p-4 rounded-full bg-primary/10">
+                            <CalendarDays className="h-10 w-10 text-primary"/>
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-lg font-semibold">
+                                Aucun rendez-vous planifié
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                                Votre calendrier est vide pour le moment. Commencez par créer votre premier rendez-vous pour organiser votre agenda.
+                            </p>
+                        </div>
+                        <Button
+                            onClick={() => setDialogOpen(true)}
+                            variant="default"
+                            size="sm"
+                            className="mt-4"
+                        >
+                            <Plus className="h-4 w-4 mr-2"/>
+                            Créer un rendez-vous
+                        </Button>
+                    </div>
                 </div>
             )}
 
-            {/* Calendar */}
-            <div className="rounded-lg border bg-background shadow-sm">
-                <Calendar
-                    events={events}
-                    date={date}
-                    contextMenuItems={contextMenuItems}
-                    onNavigate={setDate}
-                />
-            </div>
+            {/* Calendar amélioré */}
+            {events.length > 0 && (
+                <div className="rounded-xl border bg-card shadow-md overflow-hidden">
+                    <Calendar
+                        events={events}
+                        date={date}
+                        contextMenuItems={contextMenuItems}
+                        onNavigate={setDate}
+                    />
+                </div>
+            )}
         </section>
     );
 };
