@@ -298,6 +298,50 @@ export class Query<T extends IModel> {
         return parsed as T | null;
     }
 
+    public async post<R = T>(id: string, data: Partial<T>, sub: string[]): Promise<R | null> {
+        const url = this.buildUrl(id + "/" + sub.join('/'));
+
+        let response: Response;
+
+        try {
+            response = await fetch(url, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+        } catch (error) {
+            // Erreur réseau (timeout, DNS, CORS, etc.)
+            throw new Error(`Network error while calling POST ${url}: ${String(error)}`);
+        }
+
+        if (!response.ok) {
+            let errorBody: unknown = null;
+
+            try {
+                errorBody = await this.safeJsonParse(response);
+            } catch {
+                // ignore JSON parse error
+            }
+
+            throw new Error(
+                `HTTP error ${response.status} when POST ${url}` +
+                (errorBody ? ` - ${JSON.stringify(errorBody)}` : "")
+            );
+        }
+
+        // 204 No Content
+        if (response.status === 204) {
+            return null;
+        }
+
+        const parsed = await this.safeJsonParse(response);
+        return parsed as R | null;
+    }
+
     /**
      * Construit l'URL complète en échappant l'id/param si fourni.
      */

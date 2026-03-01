@@ -1,5 +1,5 @@
 import {Service} from "@/services/service";
-import type {IAgenda} from "@/types/IAgenda.ts";
+import type {AgendaId, IAgenda} from "@/types/IAgenda.ts";
 import {Agenda} from "@/models/agenda.ts";
 import {Query} from "@/utils/query.ts";
 import {Appointment} from "@/models/appointment.ts";
@@ -32,5 +32,15 @@ export class AgendasService extends Service<IAgenda, Agenda> {
         const data = await query.get('stats') as unknown as IDashboardStats[];
 
         return data[0] ? new AgendaStats(data[0]) : null;
+    }
+
+    public async createAppointment(id: AgendaId, data: Partial<IAppointment>): Promise<Appointment | null> {
+        const query = new Query<IAppointment>(this.url);
+        const newCreated = await query.post<IAppointment>(id, data, ['appointments']);
+
+        if (newCreated)
+            return new Appointment(newCreated);
+
+        return null;
     }
 }
