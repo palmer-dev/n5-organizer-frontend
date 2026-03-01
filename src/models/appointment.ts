@@ -4,6 +4,7 @@ import AppointmentStatusType from "@/types/AppointmentStatusType.ts";
 import type {CalendarEvent} from "@/types/CalendarEvent.ts";
 import {toDate} from "@/lib/utils.ts";
 import {User} from "@/models/user.ts";
+import {Agenda} from "@/models/agenda.ts";
 
 export class Appointment extends Model<IAppointment> implements IAppointment {
     name: string;
@@ -22,7 +23,7 @@ export class Appointment extends Model<IAppointment> implements IAppointment {
         this.startDate = toDate(params.startDate)!;
         this.endDate = toDate(params.endDate)!;
         this.agendas = params.agendas?.map(item => ({
-            ...item,
+            agenda: new Agenda(item.agenda),
             status: new AppointmentStatusType(item.status.toString())
         })) ?? [];
         this.status = params.status instanceof AppointmentStatusType ? params.status : new AppointmentStatusType(params.status);
@@ -57,7 +58,7 @@ export class Appointment extends Model<IAppointment> implements IAppointment {
     }
 
     get collaborator() {
-        return this.users.map(user => user.fullName).join(', ') ?? 'Moi';
+        return this.agendas.map(agenda => agenda.agenda.user?.fullName).join(', ') ?? 'Moi';
     }
 
     get time() {
