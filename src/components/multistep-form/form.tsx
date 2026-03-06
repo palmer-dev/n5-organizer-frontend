@@ -211,7 +211,7 @@ export const MultiForm = ({appointment, onSubmit: onFormSubmitted}: {
                                 <FormItem>
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel htmlFor="users">
-                                            Select Field
+                                            Choisissez les participants
                                         </FieldLabel>
                                         <MultiSelect
                                             id="users"
