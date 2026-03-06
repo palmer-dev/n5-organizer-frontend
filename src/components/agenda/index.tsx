@@ -125,11 +125,12 @@ const AgendaViewer = ({calendarId}: { calendarId: AgendaId }) => {
         setSelectedAppointment(null);
     }, [selectedAppointment, deleteAppointment]);
 
-    const handleUpdateDescription = async (data: { notes: string }) => {
+    const handleUpdateDescription = async (data: { name: string,  notes: string }) => {
         if (!selectedAppointment) return;
 
         await updateDescriptionAppointment.mutateAsync({
             id: selectedAppointment.id,
+            name: data.name,
             notes: data.notes,
         });
 

@@ -44,9 +44,9 @@ export class AppointmentsService extends Service<IAppointment, Appointment> {
     /**
      * Met à jour la description (notes) d'un rendez-vous
      */
-    public async updateDescription(id: IAppointment["id"], notes: string): Promise<Appointment | null> {
+    public async updateDetails(id: IAppointment["id"], name: string, notes: string): Promise<Appointment | null> {
         const query = new Query<IAppointment>(this.url);
-        const updated = await query.update(id, {notes});
+        const updated = await query.update(id, {name, notes});
 
         if (updated)
             return new this.model(updated);

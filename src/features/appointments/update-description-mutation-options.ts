@@ -9,10 +9,11 @@ import {agendasQueryOptions} from "@/features/agendas/agendas-query-options.ts";
 
 export const updateDescriptionAppointmentsMutationOptions = (agendaId: AgendaId) =>
     mutationOptions({
-        mutationFn: ({id, notes}: {
+        mutationFn: ({id, name, notes}: {
             id: AppointmentId,
+            name: string,
             notes: string
-        }) => new AppointmentsService().updateDescription(id, notes),
+        }) => new AppointmentsService().updateDetails(id, name, notes),
         onSuccess: () => {
             if (agendaId) {
                 void queryClient.invalidateQueries({
